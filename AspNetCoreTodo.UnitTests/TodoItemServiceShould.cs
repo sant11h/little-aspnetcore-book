@@ -4,9 +4,6 @@ using AspNetCoreTodo.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -21,7 +18,7 @@ namespace AspNetCoreTodo.UnitTests
                 .UseInMemoryDatabase(databaseName: "Test_AddNewItem")
                 .Options;
 
-            using (var context = new ApplicationDbContext(options))
+            await using (var context = new ApplicationDbContext(options))
             {
                 var service = new TodoItemService(context);
 
@@ -35,7 +32,7 @@ namespace AspNetCoreTodo.UnitTests
                 await service.AddItemAsync(new TodoItem { Title = "Testing" }, fakeUser);
             }
 
-            using (var context = new ApplicationDbContext(options))
+            await using (var context = new ApplicationDbContext(options))
             {
                 var itemsInDatabase = await context.Items.CountAsync();
                 Assert.Equal(1, itemsInDatabase);
@@ -56,22 +53,20 @@ namespace AspNetCoreTodo.UnitTests
                 .UseInMemoryDatabase(databaseName: "Test_AddNewItem")
                 .Options;
 
-            using (var context = new ApplicationDbContext(options))
+            await using var context = new ApplicationDbContext(options);
+            var service = new TodoItemService(context);
+
+            var fakeUser = new IdentityUser
             {
-                var service = new TodoItemService(context);
+                Id = "fake-322",
+                UserName = "fake@test.com",
+            };
 
-                var fakeUser = new IdentityUser
-                {
-                    Id = "fake-322",
-                    UserName = "fake@test.com",
-                };
+            await service.AddItemAsync(new TodoItem { Title = "Testing" }, fakeUser);
 
-                await service.AddItemAsync(new TodoItem { Title = "Testing" }, fakeUser);
+            var result = await service.MarkDoneAsync(new Guid(), fakeUser);
 
-                var result = await service.MarkDoneAsync(new Guid(), fakeUser);
-
-                Assert.False(result);
-            }
+            Assert.False(result);
         }
 
         [Fact]
@@ -81,23 +76,21 @@ namespace AspNetCoreTodo.UnitTests
                .UseInMemoryDatabase(databaseName: "Test_AddNewItem")
                .Options;
 
-            using (var context = new ApplicationDbContext(options))
+            await using var context = new ApplicationDbContext(options);
+            var service = new TodoItemService(context);
+
+            var fakeUser = new IdentityUser
             {
-                var service = new TodoItemService(context);
+                Id = "fake-322",
+                UserName = "fake@test.com",
+            };
 
-                var fakeUser = new IdentityUser
-                {
-                    Id = "fake-322",
-                    UserName = "fake@test.com",
-                };
+            await service.AddItemAsync(new TodoItem {Title = "Testing" }, fakeUser);
+            var item = await context.Items.FirstAsync();
 
-                await service.AddItemAsync(new TodoItem {Title = "Testing" }, fakeUser);
-                var item = await context.Items.FirstAsync();
+            var result = await service.MarkDoneAsync(item.Id, fakeUser);
 
-                var result = await service.MarkDoneAsync(item.Id, fakeUser);
-
-                Assert.True(result);
-            }
+            Assert.True(result);
         }
     }
 }

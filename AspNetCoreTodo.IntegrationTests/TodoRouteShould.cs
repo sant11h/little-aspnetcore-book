@@ -1,21 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
+﻿using System.Net;
 using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Xunit;
 
 namespace AspNetCoreTodo.IntegrationTests
 {
-    public class TodoRouteShould:IClassFixture<TestFixture>
+    public class TodoRouteShould:IClassFixture<WebApplicationFactory<Program>>
     {
         private readonly HttpClient _client;
 
-        public TodoRouteShould(TestFixture fixture)
+        public TodoRouteShould(WebApplicationFactory<Program> factory)
         {
-            _client = fixture.Client;
+            _client = factory.CreateClient();
         }
 
         [Fact]
@@ -24,12 +21,12 @@ namespace AspNetCoreTodo.IntegrationTests
             //Arrange
             var request = new HttpRequestMessage(HttpMethod.Get, "/todo");
 
-            //Act: request the /todo route
+            //Act: request the /to-do route
             var response = await _client.SendAsync(request);
 
             //Assert: the user is sent to the login page
-            Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
-            Assert.Equal("http://localhost:322/Identity/Account/Login?ReturnUrl=%2Ftodo", response.Headers.Location.ToString());
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            Assert.Equal("http://localhost/Identity/Account/Login?ReturnUrl=%2Ftodo", response.RequestMessage.RequestUri.ToString());
         }
     }
 }
